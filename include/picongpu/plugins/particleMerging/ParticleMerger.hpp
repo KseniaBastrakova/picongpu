@@ -94,6 +94,7 @@ namespace particleMerging
 
         void notify(uint32_t currentStep)
         {
+        	printf("  notify function ");
             using SuperCellSize = MappingDesc::SuperCellSize;
 
             const pmacc::math::Int<simDim> coreBorderGuardSuperCells =
@@ -119,6 +120,7 @@ namespace particleMerging
             );
 
             /* create `ParticleMergerKernel` instance */
+
             ParticleMergerKernel< typename ParticlesType::ParticlesBoxType >
             particleMergerKernel(
                 particles->getDeviceParticlesBox(),
@@ -128,7 +130,7 @@ namespace particleMerging
                 this->relMomSpreadThreshold,
                 this->minMeanEnergy
             );
-
+            printf("  execute particle merging alorithm ");
             /* execute particle merging alorithm */
             algorithm::kernel::Foreach< SuperCellSize > foreach;
             foreach(
@@ -139,6 +141,7 @@ namespace particleMerging
 
             /* close all gaps caused by removal of particles */
             particles->fillAllGaps();
+            printf("c lose all gaps caused by removal of particles");
         }
 
 
@@ -286,10 +289,12 @@ namespace particleMerging
             cellDescription( nullptr )
         {
             Environment<>::get().PluginConnector().registerPlugin( this );
+            printf(" struct ParticleMergerWrapped  ");
         }
 
         std::string pluginGetName() const
         {
+
             return this->name;
         }
 

@@ -153,6 +153,8 @@ namespace pmacc
          */
         void notifyPlugins(uint32_t currentStep)
         {
+        	std::cout<<" notifyPlugin ";
+        	std::cout<< currentStep;
             for (NotificationList::iterator iter = notificationList.begin();
                     iter != notificationList.end(); ++iter)
             {
@@ -163,9 +165,14 @@ namespace pmacc
                     )
                 )
                 {
+                	std::cout<<" If containsStep ";
                     INotify* notifiedObj = iter->first;
+                    std::cout<<" If containsStep ";
+                    std::cout<<notifiedObj;
                     notifiedObj->notify(currentStep);
+                    std::cout<< "end of ";
                     notifiedObj->setLastNotify(currentStep);
+                    std::cout<< " notifiedObjs ";
                 }
             }
         }

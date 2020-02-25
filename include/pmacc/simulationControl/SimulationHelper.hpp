@@ -138,6 +138,9 @@ public:
     virtual void dumpOneStep(uint32_t currentStep)
     {
         /* trigger notification */
+    	std::cout<<"  currentStep ";
+    	std::cout<< currentStep;
+    	std::cout<<"  ";
         Environment<DIM>::get().PluginConnector().notifyPlugins(currentStep);
 
         /* trigger checkpoint notification */

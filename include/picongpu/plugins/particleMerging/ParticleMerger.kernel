@@ -129,15 +129,18 @@ namespace particleMerging
             constexpr uint32_t numWorkers = pmacc::math::CT::volume< SuperCellSize >::type::value;
             const uint32_t workerIdx = DataSpaceOperations< simDim >::template map<
                 SuperCellSize
-            >( cellIdx );
+            >( /*cellIdx*/ cellIdx % SuperCellSize::toRT());         
+            printf("workerIdx, cell idx(3) :  %i, %i, %i, %i \n",  workerIdx, cellIdx.x(), cellIdx.y(), cellIdx.z());
+            
+
             particleAccess::Cell2Particle< SuperCellSize, numWorkers > forEachFrame;
             forEachFrame(
                 acc,
                 this->particlesBox,
                 workerIdx,
-                cellIdx,
+                cellIdx,        
                 [this]( const T_Acc & acc, FramePtr frame, const int linearThreadIdx )
-                {
+                {	
                     auto particle = frame[linearThreadIdx];
 
                     const lcellId_t particleCellIdx = particle[localCellIdx_];
@@ -324,9 +327,9 @@ namespace particleMerging
                             this->relMomSpreadThreshold != float_X( -1.0 ) ?
                             this->relMomSpreadThreshold * this->relMomSpreadThreshold * voronoiCell.getMeanMomentum2() :
                             this->absMomSpreadThreshold * this->absMomSpreadThreshold;
+                           
 
                         /* check if Voronoi cell is too large in spread of position or momentum */
-                        uint8_t splittingComponent;
                         if(
                             (
                                 voronoiCell.splittingStage == VoronoiSplittingStage::position &&
@@ -411,7 +414,6 @@ namespace particleMerging
             PMACC_SMEM( acc, listVoronoiCells, ArrayVoronoiCells );
             /* holds indices of active Voronoi cells within `listVoronoiCells` */
             PMACC_SMEM( acc, voronoiIndexPool, VoronoiIndexPool );
-
             /* number of initial Voronoi cells
              *
              * `1u << simDim` is equivalent to `pow(2, simDim)` but can be
@@ -420,7 +422,6 @@ namespace particleMerging
             constexpr uint16_t numInitialVoronoiCells = pmacc::math::CT::volume<
                 SuperCellSize
             >::type::value / ( 1u << simDim );
-
             if( linearThreadIdx == 0 )
             {
                 /* init index pool of Voronoi Cells */
@@ -428,15 +429,16 @@ namespace particleMerging
             }
 
             __syncthreads();
-
             /* set initial Voronoi cells into `collecting` state */
             if( linearThreadIdx < numInitialVoronoiCells )
                 listVoronoiCells[linearThreadIdx] = VoronoiCell();
+
 
             /* init the voronoiCellId attribute for each particle */
             this->initVoronoiCellIdAttribute( acc, cellIndex );
 
             /* main loop of the merging algorithm */
+
             while( voronoiIndexPool.size() > 0 )
             {
                 this->processParticles(
@@ -446,7 +448,6 @@ namespace particleMerging
                 );
 
                 __syncthreads();
-
                 /* TODO: parallelize */
                 if( linearThreadIdx == 0 )
                 {
@@ -455,7 +456,7 @@ namespace particleMerging
                         voronoiIndexPool
                     );
                 }
-
+				
                 __syncthreads();
             }
         }
