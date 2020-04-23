@@ -75,12 +75,12 @@ namespace randomizedParticleMerger
         int32_t higherCellId;
         int firstParticleFlag;
         float_X expectedNumMacroParticles;
-        float_X parentNumMacroParticles;
+        int parentNumMacroParticles;
         float_X parentExpectedNumMacroParticles;
 
         HDINLINE
         VoronoiCell( VoronoiSplittingStage splittingStage = VoronoiSplittingStage::position,
-                float_X parentNumMacroParticles = 0, float_X parentExpectedNumMacroParticles = 0 ) :
+                float_X parentNumMacroParticles = -1, float_X parentExpectedNumMacroParticles = -1 ) :
             status( VoronoiStatus::collecting ),
             splittingStage( splittingStage ),
             numMacroParticles( 0 ),
@@ -205,7 +205,20 @@ namespace randomizedParticleMerger
             const float_X ratioLeftParticles
         )
         {
-            if ( numMacroParticles > minMacroParticlesToDivide )
+
+
+            if (numMacroParticles == 0)
+                printf("ZERO!");
+            if (parentNumMacroParticles  < 0 ){
+                expectedNumMacroParticles = numMacroParticles * ratioLeftParticles;
+                return;
+            }
+            if ( numMacroParticles == 1 )
+                expectedNumMacroParticles = 1;
+            if ( numMacroParticles == 2 && parentNumMacroParticles == 3 )
+                expectedNumMacroParticles = 2;
+
+            if ( parentNumMacroParticles > minMacroParticlesToDivide )
             {
                 expectedNumMacroParticles = numMacroParticles * ratioLeftParticles;
 
@@ -217,6 +230,12 @@ namespace randomizedParticleMerger
                 expectedNumMacroParticles = currentExpectedNumMacroParticles;
 
             }
+
+
+            if (expectedNumMacroParticles < 1 || expectedNumMacroParticles > numMacroParticles)
+                printf(" SPECIAL CASE!!!! : %f %i %f %i  \n",expectedNumMacroParticles,  numMacroParticles,
+                        parentExpectedNumMacroParticles, parentNumMacroParticles);
+
         }
 
 

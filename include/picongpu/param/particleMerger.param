@@ -35,7 +35,7 @@ namespace particleMerging
     /** maximum number of active Voronoi cells per supercell. If the number
       * of active Voronoi cells reaches this limit merging events are dropped.
       */
-    constexpr size_t MAX_VORONOI_CELLS = 128;
+    constexpr size_t MAX_VORONOI_CELLS = 512;
 
 } // namespace particleMerging
 } // namespace plugins

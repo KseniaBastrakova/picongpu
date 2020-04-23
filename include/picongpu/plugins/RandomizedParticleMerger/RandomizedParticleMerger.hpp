@@ -97,7 +97,7 @@ namespace randomizedParticleMerger
 
         void notify(uint32_t currentStep)
         {
-            printf(" Randomized  notify(uint32_t currentStep) ");
+
             using SuperCellSize = MappingDesc::SuperCellSize;
 
             const pmacc::math::Int<simDim> coreBorderGuardSuperCells =
