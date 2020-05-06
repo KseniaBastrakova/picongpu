@@ -118,6 +118,7 @@ namespace particleMerging
                 true
             );
 
+            printf("non randomize particle merger");
             /* create `ParticleMergerKernel` instance */
             ParticleMergerKernel< typename ParticlesType::ParticlesBoxType >
             particleMergerKernel(

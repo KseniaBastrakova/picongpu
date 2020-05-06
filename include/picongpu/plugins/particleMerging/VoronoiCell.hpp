@@ -65,6 +65,7 @@ namespace particleMerging
         VoronoiStatus status;
         VoronoiSplittingStage splittingStage;
         uint32_t numMacroParticles;
+        uint32_t numREALMacroParticles;
         float_X numRealParticles;
 
         float3_X meanValue;
@@ -74,16 +75,20 @@ namespace particleMerging
         int32_t lowerCellId;
         int32_t higherCellId;
         int firstParticleFlag;
+        int parentNumMacroParticles;
 
         HDINLINE
-        VoronoiCell( VoronoiSplittingStage splittingStage = VoronoiSplittingStage::position ) :
+        VoronoiCell( VoronoiSplittingStage splittingStage = VoronoiSplittingStage::position,
+                int parentNumMacroParticles = -1 ) :
             status( VoronoiStatus::collecting ),
             splittingStage( splittingStage ),
             numMacroParticles( 0 ),
             numRealParticles( float_X( 0.0 ) ),
             meanValue( float3_X::create( 0.0 ) ),
             meanSquaredValue( float3_X::create( 0.0 ) ),
-            firstParticleFlag( 0 )
+            firstParticleFlag( 0 ),
+            parentNumMacroParticles ( parentNumMacroParticles ),
+            numREALMacroParticles(0)
         {}
 
         /** status setter */
@@ -136,6 +141,9 @@ namespace particleMerging
         {
             nvidia::atomicAllInc( acc, &this->numMacroParticles, ::alpaka::hierarchy::Threads{} );
             atomicAdd( &this->numRealParticles, weighting, ::alpaka::hierarchy::Threads{} );
+            atomicAdd( &this->numREALMacroParticles, (uint32_t)1, ::alpaka::hierarchy::Threads{} );
+
+
 
             if( this->splittingStage == VoronoiSplittingStage::position )
             {

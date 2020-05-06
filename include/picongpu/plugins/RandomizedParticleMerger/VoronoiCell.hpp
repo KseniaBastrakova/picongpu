@@ -77,6 +77,7 @@ namespace randomizedParticleMerger
         float_X expectedNumMacroParticles;
         int parentNumMacroParticles;
         float_X parentExpectedNumMacroParticles;
+        uint32_t numREALMacroParticles;
 
         HDINLINE
         VoronoiCell( VoronoiSplittingStage splittingStage = VoronoiSplittingStage::position,
@@ -90,7 +91,8 @@ namespace randomizedParticleMerger
             firstParticleFlag( 0 ),
             expectedNumMacroParticles ( 0 ),
             parentNumMacroParticles ( parentNumMacroParticles ),
-            parentExpectedNumMacroParticles ( parentExpectedNumMacroParticles )
+            parentExpectedNumMacroParticles ( parentExpectedNumMacroParticles ),
+			numREALMacroParticles ( 0 )
 
         {}
 
@@ -145,6 +147,7 @@ namespace randomizedParticleMerger
 
             nvidia::atomicAllInc( acc, &this->numMacroParticles, ::alpaka::hierarchy::Threads{} );
             atomicAdd( &this->numRealParticles, weighting, ::alpaka::hierarchy::Threads{} );
+            atomicAdd( &this->numREALMacroParticles, (uint32_t)1, ::alpaka::hierarchy::Threads{} );
 
             if( this->splittingStage == VoronoiSplittingStage::position )
             {
@@ -205,35 +208,31 @@ namespace randomizedParticleMerger
             const float_X ratioLeftParticles
         )
         {
-
-
-            if (numMacroParticles == 0)
-                printf("ZERO!");
             if (parentNumMacroParticles  < 0 ){
-                expectedNumMacroParticles = numMacroParticles * ratioLeftParticles;
+                expectedNumMacroParticles = numREALMacroParticles * ratioLeftParticles;
                 return;
             }
-            if ( numMacroParticles == 1 )
+            if ( numREALMacroParticles == 1 )
                 expectedNumMacroParticles = 1;
-            if ( numMacroParticles == 2 && parentNumMacroParticles == 3 )
+            if ( numREALMacroParticles == 2 && parentNumMacroParticles == 3 )
                 expectedNumMacroParticles = 2;
 
             if ( parentNumMacroParticles > minMacroParticlesToDivide )
             {
-                expectedNumMacroParticles = numMacroParticles * ratioLeftParticles;
+                expectedNumMacroParticles = numREALMacroParticles * ratioLeftParticles;
 
             }
             else
             {
                 float_X undividedCellCoef = ( parentExpectedNumMacroParticles + parentNumMacroParticles ) / 2.0;
-                float_X currentExpectedNumMacroParticles = numMacroParticles * undividedCellCoef / parentNumMacroParticles ;
+                float_X currentExpectedNumMacroParticles = numREALMacroParticles * undividedCellCoef / parentNumMacroParticles ;
                 expectedNumMacroParticles = currentExpectedNumMacroParticles;
 
             }
 
 
-            if (expectedNumMacroParticles < 1 || expectedNumMacroParticles > numMacroParticles)
-                printf(" SPECIAL CASE!!!! : %f %i %f %i  \n",expectedNumMacroParticles,  numMacroParticles,
+            if (expectedNumMacroParticles < 1 || expectedNumMacroParticles > numREALMacroParticles)
+                printf(" SPECIAL CASE!!!! : %f %i %f %i  \n",expectedNumMacroParticles,  numREALMacroParticles,
                         parentExpectedNumMacroParticles, parentNumMacroParticles);
 
         }
