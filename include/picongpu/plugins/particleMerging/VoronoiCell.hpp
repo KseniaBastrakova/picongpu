@@ -139,11 +139,8 @@ namespace particleMerging
             const float_X weighting
         )
         {
-            nvidia::atomicAllInc( acc, &this->numMacroParticles, ::alpaka::hierarchy::Threads{} );
+            atomicAdd( &this->numMacroParticles, (uint32_t)1, ::alpaka::hierarchy::Threads{} );
             atomicAdd( &this->numRealParticles, weighting, ::alpaka::hierarchy::Threads{} );
-            atomicAdd( &this->numREALMacroParticles, (uint32_t)1, ::alpaka::hierarchy::Threads{} );
-
-
 
             if( this->splittingStage == VoronoiSplittingStage::position )
             {

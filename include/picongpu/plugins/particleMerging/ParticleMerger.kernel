@@ -252,24 +252,6 @@ namespace particleMerging
                     }
                     
                     if( voronoiCellId != -1 ){
-                    
-                    
-                    if ( blockIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0 ){
-                    if ( voronoiCellId  == 0 )
-                    		atomicAdd( &sum_null, 1, ::alpaka::hierarchy::Threads{} );
-                   
-                   if ( voronoiCellId  == 8 )
-                    		atomicAdd( &sum_8, 1, ::alpaka::hierarchy::Threads{} );
-                   
-                   if ( voronoiCellId  == 16 )
-                    		atomicAdd( &sum_16, 1, ::alpaka::hierarchy::Threads{} );
-                    
-                   if ( voronoiCellId  == 24 )
-                    		atomicAdd( &sum_24, 1, ::alpaka::hierarchy::Threads{} );
-                    if ( voronoiCellId  == 2 )
-                    		atomicAdd( &sum_2, 1, ::alpaka::hierarchy::Threads{} );
-					
-					}
                      
 
                     VoronoiCell& voronoiCell = listVoronoiCells[voronoiCellId];
@@ -563,9 +545,12 @@ namespace particleMerging
             /* set initial Voronoi cells into `collecting` state */
             if( linearThreadIdx < numInitialVoronoiCells )
                 listVoronoiCells[linearThreadIdx] = VoronoiCell();
+                
+             __syncthreads();
 
             /* init the voronoiCellId attribute for each particle */
             this->initVoronoiCellIdAttribute( acc, cellIndex );
+             __syncthreads();
 
             /* main loop of the merging algorithm */
             while( voronoiIndexPool.size() > 0 )

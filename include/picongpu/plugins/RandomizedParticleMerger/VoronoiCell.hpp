@@ -145,9 +145,8 @@ namespace randomizedParticleMerger
         )
         {
 
-            nvidia::atomicAllInc( acc, &this->numMacroParticles, ::alpaka::hierarchy::Threads{} );
+            atomicAdd( &this->numMacroParticles, (uint32_t)1, ::alpaka::hierarchy::Threads{} );
             atomicAdd( &this->numRealParticles, weighting, ::alpaka::hierarchy::Threads{} );
-            atomicAdd( &this->numREALMacroParticles, (uint32_t)1, ::alpaka::hierarchy::Threads{} );
 
             if( this->splittingStage == VoronoiSplittingStage::position )
             {
@@ -209,30 +208,30 @@ namespace randomizedParticleMerger
         )
         {
             if (parentNumMacroParticles  < 0 ){
-                expectedNumMacroParticles = numREALMacroParticles * ratioLeftParticles;
+                expectedNumMacroParticles = numMacroParticles * ratioLeftParticles;
                 return;
             }
-            if ( numREALMacroParticles == 1 )
+            if ( numMacroParticles == 1 )
                 expectedNumMacroParticles = 1;
-            if ( numREALMacroParticles == 2 && parentNumMacroParticles == 3 )
+            if ( numMacroParticles == 2 && parentNumMacroParticles == 3 )
                 expectedNumMacroParticles = 2;
 
             if ( parentNumMacroParticles > minMacroParticlesToDivide )
             {
-                expectedNumMacroParticles = numREALMacroParticles * ratioLeftParticles;
+                expectedNumMacroParticles = numMacroParticles * ratioLeftParticles;
 
             }
             else
             {
                 float_X undividedCellCoef = ( parentExpectedNumMacroParticles + parentNumMacroParticles ) / 2.0;
-                float_X currentExpectedNumMacroParticles = numREALMacroParticles * undividedCellCoef / parentNumMacroParticles ;
+                float_X currentExpectedNumMacroParticles = numMacroParticles * undividedCellCoef / parentNumMacroParticles ;
                 expectedNumMacroParticles = currentExpectedNumMacroParticles;
 
             }
 
 
-            if (expectedNumMacroParticles < 1 || expectedNumMacroParticles > numREALMacroParticles)
-                printf(" SPECIAL CASE!!!! : %f %i %f %i  \n",expectedNumMacroParticles,  numREALMacroParticles,
+            if (expectedNumMacroParticles < 1 || expectedNumMacroParticles > numMacroParticles)
+                printf(" SPECIAL CASE!!!! : %f %i %f %i  \n",expectedNumMacroParticles,  numMacroParticles,
                         parentExpectedNumMacroParticles, parentNumMacroParticles);
 
         }

@@ -201,21 +201,21 @@ namespace randomizedParticleMerger
              VoronoiCell const & voronoiCell
         ) const
         {     
-        	if ( voronoiCell.numREALMacroParticles > minMacroParticlesToDivide )
+        	if ( voronoiCell.numMacroParticles > minMacroParticlesToDivide )
         		return true;
         	
-        	float_X halfDivisionCoefficient = ( voronoiCell.expectedNumMacroParticles + voronoiCell.numREALMacroParticles )/ 2.0_X;
+        	float_X halfDivisionCoefficient = ( voronoiCell.expectedNumMacroParticles + voronoiCell.numMacroParticles )/ 2.0_X;
          	 1.0_X + ( voronoiCell.expectedNumMacroParticles + 1 )/ 4.0_X;
          		 
          	float_X subdivisionProbability = ( voronoiCell.expectedNumMacroParticles - 1.0_X ) / ( halfDivisionCoefficient - 1.0_X );
-        	if (voronoiCell.numREALMacroParticles == 2 )
+        	if (voronoiCell.numMacroParticles == 2 )
         		subdivisionProbability = voronoiCell.expectedNumMacroParticles - 1.0_X;
         	
-        	if ( voronoiCell.numREALMacroParticles == 3 )
+        	if ( voronoiCell.numMacroParticles == 3 )
             	subdivisionProbability = (voronoiCell.expectedNumMacroParticles -1)/2.0;
         		
         	if (!(subdivisionProbability >= 0) || !( subdivisionProbability <= 1))
-        		printf(" SPECIAL CASE!!!! isNeededSubdivision: %f %i %f %i  \n",voronoiCell.expectedNumMacroParticles,  voronoiCell.numREALMacroParticles,
+        		printf(" SPECIAL CASE!!!! isNeededSubdivision: %f %i %f %i  \n",voronoiCell.expectedNumMacroParticles,  voronoiCell.numMacroParticles,
                         voronoiCell.parentExpectedNumMacroParticles, voronoiCell.parentNumMacroParticles);
         	
         	return randomGen() < 0.5; 
@@ -352,7 +352,7 @@ namespace randomizedParticleMerger
             {
              VoronoiCell& voronoiCell = listVoronoiCells[voronoiCellId];  
  //         if (blockIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-   //     	printf(" %i, %f, %i, %f, %i \n", voronoiCell.numREALMacroParticles, voronoiCell.expectedNumMacroParticles,
+   //     	printf(" %i, %f, %i, %f, %i \n", voronoiCell.numMacroParticles, voronoiCell.expectedNumMacroParticles,
      //   	voronoiCell.parentNumMacroParticles, voronoiCell.parentExpectedNumMacroParticles, (int)voronoiCell.status);
        
        //     }  	
@@ -363,7 +363,7 @@ namespace randomizedParticleMerger
                 case VoronoiStatus::collecting:
                     {
 
-                    if ( voronoiCell.numREALMacroParticles < 2 )
+                    if ( voronoiCell.numMacroParticles < 2 )
                         {	
                         	
 							voronoiCell.setToAbort();
@@ -403,12 +403,12 @@ namespace randomizedParticleMerger
                            
                             listVoronoiCells[voronoiCell.lowerCellId] = VoronoiCell(
                             	voronoiCell.splittingStage,
-                             	voronoiCell.numREALMacroParticles,
+                             	voronoiCell.numMacroParticles,
                              	voronoiCell.expectedNumMacroParticles
                             );
                             listVoronoiCells[voronoiCell.higherCellId] = VoronoiCell(
                             	voronoiCell.splittingStage,
-                             	voronoiCell.numREALMacroParticles, 
+                             	voronoiCell.numMacroParticles, 
                              	voronoiCell.expectedNumMacroParticles
                              );
 
@@ -495,10 +495,10 @@ namespace randomizedParticleMerger
             /* set initial Voronoi cells into `collecting` state */
             if( linearThreadIdx < numInitialVoronoiCells )
                 listVoronoiCells[linearThreadIdx] = VoronoiCell();
-
+			 __syncthreads();
             /* init the voronoiCellId attribute for each particle */
             this->initVoronoiCellIdAttribute( acc, cellIndex );
-			
+			 __syncthreads();
             /* main loop of the merging algorithm */
 
             while( voronoiIndexPool.size() > 0 )
