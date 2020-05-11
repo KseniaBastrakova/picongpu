@@ -91,7 +91,6 @@ namespace randomizedParticleMerger
             prefix( ParticlesType::FrameType::getName() + std::string("_randomizedMerger") ),
             cellDescription( nullptr )
         {
-            printf("  RandomizedParticleMergerWrapped ");
             Environment<>::get().PluginConnector().registerPlugin( this );
         }
 
@@ -162,7 +161,7 @@ namespace randomizedParticleMerger
 
         void pluginRegisterHelp(po::options_description& desc)
         {
-            printf("  Randomized pluginRegisterHelp ");
+
             desc.add_options()
             (
                 ( this->prefix + ".period" ).c_str(),
@@ -204,7 +203,6 @@ namespace randomizedParticleMerger
 
         void pluginLoad()
         {
-            printf("randomize pluginLoad");
             if( notifyPeriod.empty() )
                return;
 

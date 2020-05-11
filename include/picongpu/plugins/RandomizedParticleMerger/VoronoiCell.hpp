@@ -77,7 +77,6 @@ namespace randomizedParticleMerger
         float_X expectedNumMacroParticles;
         int parentNumMacroParticles;
         float_X parentExpectedNumMacroParticles;
-        uint32_t numREALMacroParticles;
 
         HDINLINE
         VoronoiCell( VoronoiSplittingStage splittingStage = VoronoiSplittingStage::position,
@@ -91,8 +90,7 @@ namespace randomizedParticleMerger
             firstParticleFlag( 0 ),
             expectedNumMacroParticles ( 0 ),
             parentNumMacroParticles ( parentNumMacroParticles ),
-            parentExpectedNumMacroParticles ( parentExpectedNumMacroParticles ),
-			numREALMacroParticles ( 0 )
+            parentExpectedNumMacroParticles ( parentExpectedNumMacroParticles )
 
         {}
 
