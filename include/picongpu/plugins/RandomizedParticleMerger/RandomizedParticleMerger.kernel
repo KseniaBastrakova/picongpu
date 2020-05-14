@@ -223,7 +223,7 @@ namespace randomizedParticleMerger
                         voronoiCell.parentExpectedNumMacroParticles, voronoiCell.parentNumMacroParticles);
            float randomGen_value =   randomGen();    
            bool subdivision_probability = randomGen_value < subdivisionProbability;       
-           return subdivision_probability; 
+           return 0; 
         }
 
         /** This method handles the merging process on the single-particle level.
@@ -319,6 +319,7 @@ namespace randomizedParticleMerger
                         break;
 
                     case VoronoiStatus::readyForMerging:
+                    	__syncthreads();
                         /* merge all particles of this Voronoi cell */
                         if (blockIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
                        
@@ -328,8 +329,8 @@ namespace randomizedParticleMerger
                         {
                             /* I am the first particle in the Voronoi cell
                              * => get dressed with Voronoi cell's attributes */
-                            particle[momentum_] = voronoiCell.meanValue * voronoiCell.numRealParticles;
-                            particle[weighting_] = voronoiCell.numRealParticles;
+                       //     particle[momentum_] = voronoiCell.meanValue * voronoiCell.numRealParticles;
+                         //   particle[weighting_] = voronoiCell.numRealParticles;
                         }
                         else
                         {
@@ -340,6 +341,7 @@ namespace randomizedParticleMerger
 
                         /* check out of the Voronoi cell */
                         particle[voronoiCellId_] = -1;
+                        __syncthreads();
                     }
                    // }
                 },
@@ -445,8 +447,6 @@ namespace randomizedParticleMerger
                          */
                         voronoiCell.setToReadyForMerging();
                         
-
-
                         break;
                     }
 
