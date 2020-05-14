@@ -127,6 +127,7 @@ namespace randomizedParticleMerger
             RngFactory rngFactory(currentStep);
 
             /* create `RandomizeParticleMergerKernel` instance */
+            printf(" RandomizedParticleMergerKernel ");
             RandomizedParticleMergerKernel< typename ParticlesType::ParticlesBoxType >
             randomizedParticleMergerKernel(
                 particles->getDeviceParticlesBox(),
@@ -139,7 +140,6 @@ namespace randomizedParticleMerger
                 rngFactory,
                 guardSuperCells
             );
-
             /* execute particle merging alorithm */
             algorithm::kernel::Foreach< SuperCellSize > foreach;
             foreach(
@@ -147,7 +147,6 @@ namespace randomizedParticleMerger
                 cursor::make_MultiIndexCursor< simDim >(),
                 randomizedParticleMergerKernel
             );
-
             /* close all gaps caused by removal of particles */
             particles->fillAllGaps();
         }
