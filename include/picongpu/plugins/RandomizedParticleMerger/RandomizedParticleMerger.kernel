@@ -68,39 +68,20 @@ namespace randomizedParticleMerger
         uint32_t minMacroParticlesToDivide;
         /** Below this threshold of spread in position (squared) macroparticles
             can be merged [unit: cell edge length] */
-        float_X posSpreadThreshold2;
-        /** Below this absolute threshold of spread in momentum
-            macroparticles can be merged [unit: m_el * c]. */
-        float_X absMomSpreadThreshold;
-        /** Below this relative (to mean momentum) threshold of spread in
-            momentum macroparticles can be merged [unit: none]. */
-        float_X relMomSpreadThreshold;
-        /** minimal mean kinetic energy needed to merge the macroparticle
-            collection into a single macroparticle [unit: keV] */
         float_X minMeanEnergy;
-
         pmacc::math::Int<simDim> guardSuperCells;
-
         float_X ratioLeftParticles;
-
         RngFactory rngFactory;
 
         RandomizedParticleMergerKernel(
             ParticlesBox particlesBox,
             uint32_t minMacroParticlesToDivide,
-            float_X posSpreadThreshold,
-            float_X absMomSpreadThreshold,
-            float_X relMomSpreadThreshold,
-            float_X minMeanEnergy,
             float_X ratioDeletedParticles,
             RngFactory rngFactory,
             const pmacc::math::Int<simDim> guardSuperCells
         ) :
             particlesBox( particlesBox ),
             minMacroParticlesToDivide( minMacroParticlesToDivide ),
-            posSpreadThreshold2( posSpreadThreshold * posSpreadThreshold ),
-            absMomSpreadThreshold( absMomSpreadThreshold ),
-            relMomSpreadThreshold( relMomSpreadThreshold ),
             minMeanEnergy ( minMeanEnergy ),
             ratioLeftParticles ( 1.0 - ratioDeletedParticles ),
             rngFactory ( rngFactory ),

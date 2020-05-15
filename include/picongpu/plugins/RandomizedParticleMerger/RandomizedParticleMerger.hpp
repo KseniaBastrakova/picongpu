@@ -72,11 +72,6 @@ namespace randomizedParticleMerger
         MappingDesc* cellDescription;
 
         uint32_t minMacroParticlesToDivide;
-        float_X posSpreadThreshold;
-        float_X absMomSpreadThreshold_mc;
-        float_X absMomSpreadThreshold;
-        float_X relMomSpreadThreshold;
-        float_64 minMeanEnergy_keV;
         float_X minMeanEnergy;
         float_X ratioDeletedParticles;
 
@@ -127,15 +122,10 @@ namespace randomizedParticleMerger
             RngFactory rngFactory(currentStep);
 
             /* create `RandomizeParticleMergerKernel` instance */
-            printf(" RandomizedParticleMergerKernel ");
             RandomizedParticleMergerKernel< typename ParticlesType::ParticlesBoxType >
             randomizedParticleMergerKernel(
                 particles->getDeviceParticlesBox(),
                 this->minMacroParticlesToDivide,
-                this->posSpreadThreshold,
-                this->absMomSpreadThreshold,
-                this->relMomSpreadThreshold,
-                this->minMeanEnergy,
                 this->ratioDeletedParticles,
                 rngFactory,
                 guardSuperCells
@@ -182,14 +172,6 @@ namespace randomizedParticleMerger
                     &this->ratioDeletedParticles
                 )->default_value( 0.1 ),
                 "Ratio of deleted particle"
-            )
-            (
-                ( this->prefix + ".minMeanEnergy" ).c_str(),
-                po::value< float_64 > (
-                    &this->minMeanEnergy_keV
-                )->default_value( 511.0 ),
-                "minimal mean kinetic energy needed to merge the macroparticle"
-                " collection into a single macroparticle [unit: keV]."
             );
         }
 
@@ -225,11 +207,6 @@ namespace randomizedParticleMerger
                 this->ratioDeletedParticles >= float_X(0.0),
                 std::string("[Plugin: ") + this->prefix + "] ratioDeletedParticles"
                 " has to be non-negative."
-            );
-            const float_64 minMeanEnergy_SI = this->minMeanEnergy_keV *
-                UNITCONV_keV_to_Joule;
-            this->minMeanEnergy = static_cast< float_X >(
-                minMeanEnergy_SI / UNIT_ENERGY
             );
         }
 
