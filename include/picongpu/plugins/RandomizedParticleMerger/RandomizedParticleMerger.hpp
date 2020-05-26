@@ -72,7 +72,6 @@ namespace randomizedParticleMerger
         MappingDesc* cellDescription;
 
         uint32_t minMacroParticlesToDivide;
-        float_X minMeanEnergy;
         float_X ratioDeletedParticles;
 
     public:
@@ -197,11 +196,6 @@ namespace randomizedParticleMerger
                 this->minMacroParticlesToDivide > 1,
                 std::string("[Plugin: ") + this->prefix + "] minMacroParticlesToDivide"
                 " has to be greater than one."
-            );
-            PMACC_VERIFY_MSG(
-                this->minMeanEnergy >= float_X(0.0),
-                std::string("[Plugin: ") + this->prefix + "] minMeanEnergy"
-                " has to be non-negative."
             );
             PMACC_VERIFY_MSG(
                 this->ratioDeletedParticles >= float_X(0.0),

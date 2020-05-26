@@ -1,4 +1,4 @@
-/* Copyright 2017-2020 Heiko Burau
+/* Copyright 2017-2020 Heiko Burau, Xeinia Bastrakova
  *
  * This file is part of PIConGPU.
  *
@@ -67,26 +67,31 @@ namespace randomizedParticleMerger
         uint32_t numMacroParticles;
         float_X numRealParticles;
 
-        float3_X meanValue;
-        float3_X meanSquaredValue;
+        float3_X meanMomentumValue;
+        float3_X meanPositionValue;
+        float3_X meanMomentumSquaredValue;
+        float3_X meanPositionSquaredValue;
+
 
         uint8_t splittingComponent;
         int32_t lowerCellId;
         int32_t higherCellId;
         int firstParticleFlag;
         float_X expectedNumMacroParticles;
-        int parentNumMacroParticles;
+        uint32_t parentNumMacroParticles;
         float_X parentExpectedNumMacroParticles;
 
         HDINLINE
         VoronoiCell( VoronoiSplittingStage splittingStage = VoronoiSplittingStage::position,
-                float_X parentNumMacroParticles = -1, float_X parentExpectedNumMacroParticles = -1 ) :
+                float_X parentNumMacroParticles = 0, float_X parentExpectedNumMacroParticles = -1 ) :
             status( VoronoiStatus::collecting ),
             splittingStage( splittingStage ),
             numMacroParticles( 0 ),
             numRealParticles( float_X( 0.0 ) ),
-            meanValue( float3_X::create( 0.0 ) ),
-            meanSquaredValue( float3_X::create( 0.0 ) ),
+            meanMomentumValue( float3_X::create( 0.0 ) ),
+            meanPositionValue( float3_X::create( 0.0 ) ),
+            meanMomentumSquaredValue( float3_X::create( 0.0 ) ),
+            meanPositionSquaredValue( float3_X::create( 0.0 ) ),
             firstParticleFlag( 0 ),
             expectedNumMacroParticles ( 0 ),
             parentNumMacroParticles ( parentNumMacroParticles ),
@@ -146,26 +151,23 @@ namespace randomizedParticleMerger
             atomicAdd( &this->numMacroParticles, (uint32_t)1, ::alpaka::hierarchy::Threads{} );
             atomicAdd( &this->numRealParticles, weighting, ::alpaka::hierarchy::Threads{} );
 
-            if( this->splittingStage == VoronoiSplittingStage::position )
-            {
-                const floatD_X position2 = position * position;
 
-                for( int i = 0; i < simDim; i++ )
-                {
-                    atomicAdd( &this->meanValue[i], weighting * position[i], ::alpaka::hierarchy::Threads{} );
-                    atomicAdd( &this->meanSquaredValue[i], weighting * position2[i], ::alpaka::hierarchy::Threads{} );
-                }
-            }
-            else
-            {
-                const float3_X momentum2 = momentum * momentum;
+            const floatD_X position2 = position * position;
 
-                for( int i = 0; i < DIM3; i++ )
-                {
-                    atomicAdd( &this->meanValue[i], weighting * momentum[i], ::alpaka::hierarchy::Threads{} );
-                    atomicAdd( &this->meanSquaredValue[i], weighting * momentum2[i], ::alpaka::hierarchy::Threads{} );
-                }
+            for( int i = 0; i < simDim; i++ )
+            {
+                atomicAdd( &this->meanPositionValue[i], weighting * position[i], ::alpaka::hierarchy::Threads{} );
+                atomicAdd( &this->meanPositionSquaredValue[i], weighting * position2[i], ::alpaka::hierarchy::Threads{} );
             }
+
+            const float3_X momentum2 = momentum * momentum;
+
+            for( int i = 0; i < DIM3; i++ )
+            {
+                atomicAdd( &this->meanMomentumValue[i], weighting * momentum[i], ::alpaka::hierarchy::Threads{} );
+                atomicAdd( &this->meanMomentumSquaredValue[i], weighting * momentum2[i], ::alpaka::hierarchy::Threads{} );
+            }
+
         }
 
         /** Counting parameters that are necessary before processing vornoi cell
@@ -189,8 +191,10 @@ namespace randomizedParticleMerger
         HDINLINE
         void finalizeMeanValues()
         {
-            this->meanValue /= this->numRealParticles;
-            this->meanSquaredValue /= this->numRealParticles;
+            this->meanMomentumValue /= this->numRealParticles;
+            this->meanPositionValue /= this->numRealParticles;
+            this->meanMomentumSquaredValue /= this->numRealParticles;
+            this->meanPositionSquaredValue /= this->numRealParticles;
         }
 
 
@@ -205,7 +209,8 @@ namespace randomizedParticleMerger
             const float_X ratioLeftParticles
         )
         {
-            if (parentNumMacroParticles  < 0 ){
+            if ( parentExpectedNumMacroParticles  < 0 )
+            {
                 expectedNumMacroParticles = numMacroParticles * ratioLeftParticles;
                 return;
             }
@@ -224,32 +229,7 @@ namespace randomizedParticleMerger
                 float_X undividedCellCoef = ( parentExpectedNumMacroParticles + parentNumMacroParticles ) / 2.0;
                 float_X currentExpectedNumMacroParticles = numMacroParticles * undividedCellCoef / parentNumMacroParticles ;
                 expectedNumMacroParticles = currentExpectedNumMacroParticles;
-
             }
-
-
-            if (expectedNumMacroParticles < 1 || expectedNumMacroParticles > numMacroParticles)
-                printf(" SPECIAL CASE!!!! : %f %i %f %i  \n",expectedNumMacroParticles,  numMacroParticles,
-                        parentExpectedNumMacroParticles, parentNumMacroParticles);
-
-        }
-
-
-        /** get the mean energy of this Voronoi cell if called in momentum stage */
-        HDINLINE
-        float_X getMeanEnergy( const float_X mass ) const
-        {
-            return KinEnergy<>()(
-                this->meanValue,
-                mass
-            );
-        }
-
-        /** get the mean momentum squared of this Voronoi cell if called in momentum stage */
-        HDINLINE
-        float_X getMeanMomentum2() const
-        {
-            return math::abs2( this->meanValue );
         }
 
 
@@ -265,9 +245,11 @@ namespace randomizedParticleMerger
                 position[this->splittingComponent] :
                 momentum[this->splittingComponent]
             ;
-
-            const float_X meanVoronoi = this->meanValue[this->splittingComponent];
-
+            const float_X meanVoronoi =
+                this->splittingStage == VoronoiSplittingStage::position ?
+                this->meanPositionValue[this->splittingComponent] :
+                this->meanMomentumValue[this->splittingComponent]
+            ;
             return
                 valParticle < meanVoronoi ?
                 this->lowerCellId :
@@ -283,8 +265,17 @@ namespace randomizedParticleMerger
             const uint8_t dimension
         ) const
         {
-            const float3_X meanValue2 = this->meanValue * this->meanValue;
-            const float3_X valueSpread2 = this->meanSquaredValue - meanValue2;
+            const float3_X meanValue2 =
+                  this->splittingStage == VoronoiSplittingStage::position ?
+                  this->meanPositionValue * this->meanPositionValue :
+                  this->meanMomentumValue * this->meanMomentumValue
+            ;
+
+            const float3_X valueSpread2 =
+                    this->splittingStage == VoronoiSplittingStage::position ?
+                    this->meanPositionSquaredValue - meanValue2 :
+                    this->meanMomentumSquaredValue - meanValue2
+            ;
 
             /* find component of most spread in position */
             component = 0;

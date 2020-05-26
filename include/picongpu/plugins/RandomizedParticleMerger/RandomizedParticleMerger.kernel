@@ -1,4 +1,4 @@
-/* Copyright 2017-2020 Heiko Burau
+/* Copyright 2017-2020 Heiko Burau, Xeinia Bastrakova
  *
  * This file is part of PIConGPU.
  *
@@ -136,13 +136,8 @@ namespace randomizedParticleMerger
                 [this]( const T_Acc & acc, FramePtr frame, const int linearThreadIdx )
                 {
                     auto particle = frame[linearThreadIdx];
-
                     const lcellId_t particleCellIdx = particle[localCellIdx_];
-
                     particle[voronoiCellId_] = this->mapCellIdxToInitialVoronoiCell( particleCellIdx );
-                    if ( particle[voronoiCellId_] < 0 || particle[voronoiCellId_] > 32)
-                        printf("initVoronoiCellIdAttribute error!!!");
-
                 },
                 particles::filter::All{}
             );
@@ -172,6 +167,29 @@ namespace randomizedParticleMerger
             return result;
         }
 
+        /** calculate revative position of partilce in Supercell
+         *
+         * @param absoluteParticlePos absolute particle coordinates
+         * @return particleCellIdx particle's supercell
+         * @return positionWithinCell position particle inside supecell
+         */
+
+        DINLINE void getSuperCellPos(
+            const floatD_X absoluteParticlePos,
+            ::pmacc::math::Vector<int, simDim>& particleCellIdx,
+            floatD_X& positionWithinCell
+        )
+        {
+            for( int i = 0; i < simDim; i++ )
+            {
+                particleCellIdx[i] = static_cast<int>( absoluteParticlePos[i] );
+                positionWithinCell[i] = absoluteParticlePos[i] - particleCellIdx[i];
+
+
+            }
+        }
+
+
         /** Decide if subdivision should be done
          *
          * @param randomGen ramdom generator functor
@@ -185,23 +203,19 @@ namespace randomizedParticleMerger
             if ( voronoiCell.numMacroParticles > minMacroParticlesToDivide )
                 return true;
 
-            float_X halfDivisionCoefficient = ( voronoiCell.expectedNumMacroParticles + voronoiCell.numMacroParticles )/ 2.0_X;
-             1.0_X + ( voronoiCell.expectedNumMacroParticles + 1 )/ 4.0_X;
+            float_X halfDivisionCoefficient = ( voronoiCell.expectedNumMacroParticles + voronoiCell.numMacroParticles ) / 2.0_X;
+             1.0_X + ( voronoiCell.expectedNumMacroParticles + 1 ) / 4.0_X;
 
             float_X subdivisionProbability = ( voronoiCell.expectedNumMacroParticles - 1.0_X ) / ( halfDivisionCoefficient - 1.0_X );
-            if (voronoiCell.numMacroParticles == 2 )
+            if ( voronoiCell.numMacroParticles == 2 )
                 subdivisionProbability = voronoiCell.expectedNumMacroParticles - 1.0_X;
 
             if ( voronoiCell.numMacroParticles == 3 )
-                subdivisionProbability = (voronoiCell.expectedNumMacroParticles -1)/2.0;
+                subdivisionProbability = ( voronoiCell.expectedNumMacroParticles - 1 ) / 2.0;
 
-            if (!(subdivisionProbability >= 0) || !( subdivisionProbability <= 1))
-                printf(" SPECIAL CASE!!!! isNeededSubdivision: %f %i %f %i  \n",voronoiCell.expectedNumMacroParticles,  voronoiCell.numMacroParticles,
-                        voronoiCell.parentExpectedNumMacroParticles, voronoiCell.parentNumMacroParticles);
-           float randomGen_value =   randomGen();
-           bool subdivision_probability = randomGen_value < subdivisionProbability;
-           return  subdivision_probability;
+           return randomGen() < subdivisionProbability;
         }
+
 
         /** This method handles the merging process on the single-particle level.
          *
@@ -253,6 +267,7 @@ namespace randomizedParticleMerger
                         particle[localCellIdx_],
                         particle[position_]
                     );
+
                     const float_X weighting = particle[weighting_];
                     const float3_X momentum = particle[momentum_] / weighting;
 
@@ -301,7 +316,21 @@ namespace randomizedParticleMerger
                         {
                             /* I am the first particle in the Voronoi cell
                              * => get dressed with Voronoi cell's attributes */
-                            particle[momentum_] = voronoiCell.meanValue * voronoiCell.numRealParticles;
+
+                            pmacc::DataSpace< simDim > voronoiCellDim = ::pmacc::math::Vector<int, simDim>::create( 0 );
+                            floatD_X relativePosition = ::pmacc::math::Vector< float_X, simDim >::create( 0._X );
+
+                            this->getSuperCellPos( voronoiCell.meanPositionValue, voronoiCellDim, relativePosition );
+
+                            lcellId_t localCellIdx =
+                            pmacc::math::linearize( pmacc::math::CT::shrinkTo< SuperCellSize, simDim - 1 >::type::toRT() / 2, voronoiCellDim );
+
+
+                            particle[localCellIdx_] = localCellIdx;
+                            particle[position_] = relativePosition;
+
+
+                            particle[momentum_] = voronoiCell.meanMomentumValue * voronoiCell.numRealParticles;
                             particle[weighting_] = voronoiCell.numRealParticles;
                         }
                         else
