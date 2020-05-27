@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "picongpu/plugins/RandomizedParticleMerger/VoronoiCell.hpp"
+#include "picongpu/plugins/randomizedParticleMerger/VoronoiCell.hpp"
 #include "picongpu/particles/access/Cell2Particle.hpp"
 #include "picongpu/particles/filter/filter.hpp"
 
@@ -233,11 +233,6 @@ namespace randomizedParticleMerger
             ArrayVoronoiCells& listVoronoiCells
         )
         {
-         int size_particles = 0;
-         PMACC_SMEM( acc, size_merged_particles, int );
-         if (blockIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-            size_merged_particles = 0;
-         }
             //! \todo change this as soon as the kernel support lock step programming
             constexpr uint32_t numWorkers = pmacc::math::CT::volume< SuperCellSize >::type::value;
             const uint32_t workerIdx = DataSpaceOperations< simDim >::template map<
@@ -252,9 +247,6 @@ namespace randomizedParticleMerger
                 [&]( const T_Acc & acc, FramePtr frame, const int linearThreadIdx )
                 {
                     auto particle = frame[linearThreadIdx];
-                    if( linearThreadIdx == 0 )
-                        size_particles += numWorkers;
-
                     const voronoiCellId::type voronoiCellId = particle[voronoiCellId_];
 
                      if( voronoiCellId == -1 )
@@ -317,13 +309,13 @@ namespace randomizedParticleMerger
                             /* I am the first particle in the Voronoi cell
                              * => get dressed with Voronoi cell's attributes */
 
-                            pmacc::DataSpace< simDim > voronoiCellDim = ::pmacc::math::Vector<int, simDim>::create( 0 );
+                            pmacc::DataSpace< simDim > particleCellIdx = ::pmacc::math::Vector<int, simDim>::create( 0 );
                             floatD_X relativePosition = ::pmacc::math::Vector< float_X, simDim >::create( 0._X );
 
-                            this->getSuperCellPos( voronoiCell.meanPositionValue, voronoiCellDim, relativePosition );
+                            this->getSuperCellPos( voronoiCell.meanPositionValue, particleCellIdx, relativePosition );
 
                             lcellId_t localCellIdx =
-                            pmacc::math::linearize( pmacc::math::CT::shrinkTo< SuperCellSize, simDim - 1 >::type::toRT() / 2, voronoiCellDim );
+                            	pmacc::math::linearize( pmacc::math::CT::shrinkTo< SuperCellSize, simDim - 1 >::type::toRT(), particleCellIdx );
 
 
                             particle[localCellIdx_] = localCellIdx;
