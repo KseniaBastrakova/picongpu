@@ -73,6 +73,8 @@ namespace randomizedParticleMerger
 
         uint32_t minMacroParticlesToDivide;
         float_X ratioDeletedParticles;
+        float_X posSpreadThreshold;
+        float_X momSpreadThreshold;
 
     public:
         using ParticlesType = T_ParticlesType;
@@ -90,7 +92,6 @@ namespace randomizedParticleMerger
 
         void notify(uint32_t currentStep)
         {
-
             using SuperCellSize = MappingDesc::SuperCellSize;
 
             const pmacc::math::Int<simDim> coreBorderGuardSuperCells =
@@ -126,6 +127,8 @@ namespace randomizedParticleMerger
                 particles->getDeviceParticlesBox(),
                 this->minMacroParticlesToDivide,
                 this->ratioDeletedParticles,
+                this->posSpreadThreshold,
+                this->momSpreadThreshold,
                 rngFactory,
                 guardSuperCells
             );
@@ -140,6 +143,7 @@ namespace randomizedParticleMerger
 
             /* close all gaps caused by removal of particles */
             particles->fillAllGaps();
+
         }
 
 
@@ -167,6 +171,23 @@ namespace randomizedParticleMerger
                 )->default_value( 8 ),
                 "minimum number of macro particles at which we always divide the cell"
             )
+            (
+                ( this->prefix + ".posSpreadThreshold" ).c_str(),
+                po::value< float_X > (
+                    &this->posSpreadThreshold
+                )->default_value( 1e-5 ),
+                "Below this threshold of spread in position macroparticles"
+                " can be merged [unit: cell edge length]."
+             )
+            (
+                ( this->prefix + ".momSpreadThreshold" ).c_str(),
+                po::value< float_X > (
+                    &this->momSpreadThreshold
+                )->default_value( 1e-5 ),
+                "Below this absolute threshold of spread in momentum"
+                " macroparticles can be merged [unit: m_el * c]."
+                " Disabled for -1 (default)."
+            )
              (
                 ( this->prefix + ".ratioDeletedParticles" ).c_str(),
                 po::value< float_X > (
@@ -193,7 +214,6 @@ namespace randomizedParticleMerger
                 notifyPeriod
             );
 
-            // clean user parameters
             PMACC_VERIFY_MSG(
                 this->minMacroParticlesToDivide > 1,
                 std::string("[Plugin: ") + this->prefix + "] minMacroParticlesToDivide"
@@ -202,6 +222,16 @@ namespace randomizedParticleMerger
             PMACC_VERIFY_MSG(
                 this->ratioDeletedParticles >= float_X(0.0),
                 std::string("[Plugin: ") + this->prefix + "] ratioDeletedParticles"
+                " has to be non-negative."
+            );
+            PMACC_VERIFY_MSG(
+                this->posSpreadThreshold >= float_X(0.0),
+                std::string("[Plugin: ") + this->prefix + "] posSpreadThreshold"
+                " has to be non-negative."
+            );
+            PMACC_VERIFY_MSG(
+                this->momSpreadThreshold >= float_X(0.0),
+                std::string("[Plugin: ") + this->prefix + "] momSpreadThreshold"
                 " has to be non-negative."
             );
         }
@@ -272,7 +302,7 @@ namespace randomizedParticleMerger
     struct RandomizedParticleMerger : RandomizedParticleMergerWrapped< T_ParticlesType >
     {};
 
-} // namespace particleMerging
+} // namespace randomizedParticleMerger
 } // namespace plugins
 } // namespace picongpu
 

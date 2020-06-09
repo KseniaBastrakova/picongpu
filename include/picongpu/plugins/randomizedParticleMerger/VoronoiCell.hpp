@@ -186,7 +186,6 @@ namespace randomizedParticleMerger
 
         }
 
-
         /** finalize mean value calculation */
         HDINLINE
         void finalizeMeanValues()
@@ -222,7 +221,6 @@ namespace randomizedParticleMerger
             if ( parentNumMacroParticles > minMacroParticlesToDivide )
             {
                 expectedNumMacroParticles = numMacroParticles * ratioLeftParticles;
-
             }
             else
             {
@@ -231,7 +229,6 @@ namespace randomizedParticleMerger
                 expectedNumMacroParticles = currentExpectedNumMacroParticles;
             }
         }
-
 
         /** determine in which of the two sub-Voronoi cells a particle falls */
         HDINLINE
@@ -256,7 +253,6 @@ namespace randomizedParticleMerger
                 this->higherCellId
             ;
         }
-
 
         /** auxillary function for getting the mean squared deviation in position or momentum */
         HDINLINE
@@ -315,6 +311,16 @@ namespace randomizedParticleMerger
         {
             return this->getMaxValueSpread2( component, DIM3 );
         }
+
+        /** invesing splitting stage */
+         HDINLINE
+         void inversersSplittingStage( )
+         {
+             if( splittingStage == VoronoiSplittingStage::position )
+                 splittingStage = VoronoiSplittingStage::momentum;
+             else
+                 splittingStage = VoronoiSplittingStage::position;
+         }
     };
 
 } // namespace particleMerging
